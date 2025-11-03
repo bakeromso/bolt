@@ -189,10 +189,12 @@ int parse_scpi_command(const char *command) {
       } else {
         char buf[64];
         for (int i = 0; i < ADC_SAMPLES; i++) {
-          snprintf(buf, 63, "%u,", data[i]);
+          int len = snprintf(buf, 63, "%u,", data[i]);
           tud_cdc_n_write(COMMAND_ITF, buf, strlen(buf));
           tud_cdc_n_write_flush(COMMAND_ITF);
-          tud_task();
+          while ((uint32_t)len > tud_cdc_n_write_available(COMMAND_ITF)) {
+            tud_task(); // Allow TinyUSB to handle background tasks
+          }
         }
         tud_cdc_n_write_char(COMMAND_ITF, '\n');
         tud_cdc_n_write_flush(COMMAND_ITF);
